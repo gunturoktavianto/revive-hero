@@ -256,26 +256,26 @@ export default function QRScanPage() {
 
       case "emergency-call":
         return (
-          <div className="space-y-6">
-            <div className="text-center space-y-4">
-              <div className="bg-yellow-50 p-4 rounded-lg">
-                <p className="text-sm text-yellow-800 mb-4">
+          <div className="space-y-8">
+            <div className="text-center space-y-6">
+              <div className="bg-yellow-50/80 backdrop-blur p-6 rounded-2xl border border-yellow-100/50">
+                <p className="text-yellow-800 mb-4 font-medium">
                   Segera hubungi bantuan darurat untuk mendapatkan pertolongan
                   medis profesional
                 </p>
-                <div className="flex items-center justify-center gap-2 text-lg font-bold text-yellow-800">
+                <div className="inline-flex items-center gap-2 px-4 py-2 bg-yellow-100/50 rounded-full text-lg font-bold text-yellow-800">
                   <Phone className="h-6 w-6" />
                   <span>112</span>
                 </div>
               </div>
 
-              <div className="bg-muted/10 p-4 rounded-lg space-y-2">
-                <h4 className="font-medium text-sm">Lokasi Saat Ini:</h4>
-                <p className="text-sm text-muted-foreground">
+              <div className="bg-muted/5 p-6 rounded-2xl border border-muted/10 space-y-4">
+                <h4 className="font-medium">Lokasi Saat Ini:</h4>
+                <p className="text-muted-foreground">
                   Jl. Cisitu Indah 4 No.14, Dago, Kecamatan Coblong, Kota
                   Bandung, Jawa Barat 40135
                 </p>
-                <div className="relative aspect-video w-full overflow-hidden rounded-lg mt-2">
+                <div className="relative aspect-video w-full overflow-hidden rounded-xl shadow-lg">
                   <iframe
                     src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3961.1935258095245!2d107.61343629999999!3d-6.8775397!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x2e68e6f8d5c37be3%3A0x4e8e3e5c2f7ed9d2!2sJl.%20Cisitu%20Indah%204%20No.14%2C%20Dago%2C%20Kecamatan%20Coblong%2C%20Kota%20Bandung%2C%20Jawa%20Barat%2040135!5e0!3m2!1sen!2sid!4v1710425547959!5m2!1sen!2sid"
                     className="absolute inset-0 w-full h-full border-0"
@@ -286,18 +286,22 @@ export default function QRScanPage() {
                 </div>
               </div>
 
-              <p className="text-sm text-muted-foreground">
+              <p className="text-sm text-muted-foreground italic">
                 Jika memungkinkan, minta orang lain untuk menghubungi bantuan
                 darurat sementara Anda melanjutkan pertolongan
               </p>
-              <div className="flex flex-col gap-2">
-                <Button className="w-full" onClick={handleNext}>
+
+              <div className="flex flex-col gap-3 mt-4">
+                <Button
+                  className="w-full bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
+                  onClick={handleNext}
+                >
                   Sudah Menghubungi 112
                 </Button>
                 <Button
                   variant="outline"
                   onClick={handleBack}
-                  className="w-full"
+                  className="w-full border-primary/20 hover:bg-primary/5 transition-all duration-300"
                 >
                   Kembali
                 </Button>
@@ -308,64 +312,74 @@ export default function QRScanPage() {
 
       case "chest-compression":
         return (
-          <div className="space-y-6">
-            <div className="text-center">
-              <div className="text-4xl font-bold mb-2">30x</div>
-              <p className="text-sm text-muted-foreground">
+          <div className="space-y-8">
+            <div className="text-center space-y-4">
+              <div className="text-5xl font-bold text-primary mb-4">30x</div>
+              <p className="text-muted-foreground">
                 Lakukan kompresi dada sebanyak 30 kali dengan mengikuti irama
                 sound di bawah!
               </p>
               <Button
                 variant="outline"
-                size="sm"
-                className="mt-2"
+                size="lg"
+                className="mt-2 border-primary/20 hover:bg-primary/5 transition-all duration-300"
                 onClick={() => (isPlaying ? stopMetronome() : startMetronome())}
               >
                 {isPlaying ? (
                   <>
-                    <VolumeX className="h-4 w-4 mr-2" /> Stop Panduan Ritme
+                    <VolumeX className="h-5 w-5 mr-2" /> Stop Panduan Ritme
                   </>
                 ) : (
                   <>
-                    <Volume2 className="h-4 w-4 mr-2" /> Mulai Panduan Ritme
+                    <Volume2 className="h-5 w-5 mr-2" /> Mulai Panduan Ritme
                   </>
                 )}
               </Button>
             </div>
 
-            <div className="space-y-4 bg-primary/5 rounded-lg p-4">
-              <h4 className="font-semibold">Cara Melakukan Kompresi Dada:</h4>
-              <div className="mt-4 relative aspect-video w-full overflow-hidden rounded-lg">
+            <div className="space-y-6 bg-primary/5 rounded-2xl p-6 border border-primary/10">
+              <h4 className="font-semibold text-lg">
+                Cara Melakukan Kompresi Dada:
+              </h4>
+              <div className="relative aspect-video w-full overflow-hidden rounded-xl shadow-lg">
                 <Image
                   src="/cpr.jpg"
                   alt="Cara melakukan kompresi dada"
                   fill
-                  className="object-cover"
+                  className="object-cover hover:scale-105 transition-transform duration-300"
                   priority
                 />
               </div>
-              <ol className="list-decimal list-inside space-y-2 text-sm">
-                <li>
+              <ol className="list-decimal list-inside space-y-3 text-sm text-muted-foreground">
+                <li className="hover:text-foreground transition-colors">
                   Baringkan tubuh korban di atas permukaan yang keras dan datar
                 </li>
-                <li>Berlutut di samping leher dan bahu korban</li>
-                <li>
+                <li className="hover:text-foreground transition-colors">
+                  Berlutut di samping leher dan bahu korban
+                </li>
+                <li className="hover:text-foreground transition-colors">
                   Letakkan satu telapak tangan di bagian tengah dada korban (di
                   antara kedua payudara)
                 </li>
-                <li>Posisikan telapak tangan lain di atas tangan pertama</li>
-                <li>Pastikan siku lurus dan bahu tepat di atas tangan</li>
-                <li>
+                <li className="hover:text-foreground transition-colors">
+                  Posisikan telapak tangan lain di atas tangan pertama
+                </li>
+                <li className="hover:text-foreground transition-colors">
+                  Pastikan siku lurus dan bahu tepat di atas tangan
+                </li>
+                <li className="hover:text-foreground transition-colors">
                   Tekan dada dengan kecepatan 100-120 kali per menit (1-2
                   tekanan per detik)
                 </li>
-                <li>Gunakan kekuatan tubuh bagian atas, bukan hanya lengan</li>
+                <li className="hover:text-foreground transition-colors">
+                  Gunakan kekuatan tubuh bagian atas, bukan hanya lengan
+                </li>
               </ol>
             </div>
 
-            <div className="flex flex-col gap-2">
+            <div className="flex flex-col gap-3">
               <Button
-                className="w-full"
+                className="w-full bg-primary hover:bg-primary/90 text-white shadow-lg hover:shadow-xl transition-all duration-300"
                 onClick={() => {
                   stopMetronome();
                   handleNext();
@@ -373,7 +387,11 @@ export default function QRScanPage() {
               >
                 Sudah Selesai 30x Kompresi
               </Button>
-              <Button variant="outline" onClick={handleBack} className="w-full">
+              <Button
+                variant="outline"
+                onClick={handleBack}
+                className="w-full border-primary/20 hover:bg-primary/5 transition-all duration-300"
+              >
                 Kembali
               </Button>
             </div>
@@ -409,21 +427,26 @@ export default function QRScanPage() {
 
     if (breathingStatus === "normal") {
       return (
-        <div className="text-center space-y-4">
-          <CheckCircle2 className="h-12 w-12 text-green-500 mx-auto" />
-          <h3 className="text-xl font-semibold">Protokol Selesai</h3>
-          <p className="text-muted-foreground mb-4">
+        <div className="text-center space-y-6 animate-in fade-in duration-500">
+          <div className="relative">
+            <div className="absolute inset-0 bg-green-500/10 blur-xl rounded-full"></div>
+            <CheckCircle2 className="h-16 w-16 text-green-500 mx-auto relative" />
+          </div>
+          <h3 className="text-2xl font-semibold">Protokol Selesai</h3>
+          <p className="text-muted-foreground leading-relaxed">
             Terima kasih atas tindakan cepatmu! Kamu baru saja memberikan
             harapan dan kesempatan hidup bagi seseorang. Bantuan darurat sedang
             dalam perjalanan, tetap tenang dan pantau kondisi pasien.
           </p>
-          <div className="bg-muted/20 rounded-lg p-4">
+          <div className="bg-muted/5 rounded-2xl p-6 border border-muted/10">
             <p className="text-sm text-muted-foreground mb-2">
               Total waktu penanganan:
             </p>
-            <div className="text-2xl font-bold">{formatTime(finalTime)}</div>
+            <div className="text-3xl font-bold text-primary">
+              {formatTime(finalTime)}
+            </div>
           </div>
-          <p className="text-sm text-primary mt-4">
+          <p className="text-sm text-primary font-medium">
             Kamu adalah pahlawan hari ini! ❤️
           </p>
         </div>
@@ -487,41 +510,47 @@ export default function QRScanPage() {
   }, []);
 
   return (
-    <div className="container p-8">
+    <div className="min-h-screen bg-gradient-to-b from-background to-primary/5 py-12 px-4">
       <div className="max-w-md mx-auto relative">
-        <div className="absolute -top-4 right-0 flex items-center gap-2 text-sm">
-          <div className="flex flex-col items-end">
-            <div className="flex items-center gap-2 text-sm font-medium">
-              <Timer className="h-4 w-4" />
-              <span>{formatTime(elapsedTime)}</span>
-            </div>
+        <h1 className="text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+          Protokol Penanganan Darurat
+        </h1>
+
+        <div className="flex justify-center mt-4 mb-8">
+          <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/50 backdrop-blur-sm rounded-full shadow-sm">
+            <Timer className="h-4 w-4 text-primary" />
+            <span className="font-medium">{formatTime(elapsedTime)}</span>
           </div>
         </div>
 
-        <h1 className="text-2xl font-bold mb-6">Protokol Penanganan Darurat</h1>
-        <Card className="p-6 space-y-6">
+        <Card className="p-8 shadow-lg hover:shadow-xl transition-all duration-300 border-primary/10">
           {!showResult ? (
             <>
-              <div className="space-y-2">
-                <h2 className="text-xl font-semibold">
+              <div className="space-y-3 mb-8">
+                <h2 className="text-2xl font-semibold text-center">
                   {steps[currentStep].title}
                 </h2>
-                <p className="text-muted-foreground">
+                <p className="text-muted-foreground text-center">
                   {steps[currentStep].description}
                 </p>
               </div>
 
-              <div className="space-y-2">
-                <Progress value={progress} className="h-2" />
-                <p className="text-xs text-right text-muted-foreground">
-                  {Math.round(progress)}% Selesai
-                </p>
+              <div className="space-y-2 mb-8">
+                <Progress value={progress} className="h-2 bg-primary/10" />
+                <div className="flex justify-between items-center text-xs text-muted-foreground">
+                  <span>
+                    Langkah {currentStep + 1} dari {steps.length}
+                  </span>
+                  <span>{Math.round(progress)}% Selesai</span>
+                </div>
               </div>
 
-              {renderStepContent()}
+              <div className="relative">{renderStepContent()}</div>
             </>
           ) : (
-            renderResult()
+            <div className="animate-in fade-in duration-500">
+              {renderResult()}
+            </div>
           )}
         </Card>
       </div>
