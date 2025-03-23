@@ -1,3 +1,11 @@
+# TECHBINAIR
+Anggota Tim
+- Bagas Kalih Putra
+- Guntur Oktavianto Nugroho
+- Maulana Afzaal Wibowo
+- Diana Annabelle Situmorang
+- Yasmin Azzahra Arifin
+
 # Revive Hero
 
 Aplikasi Revive Hero adalah platform pertolongan pertama berbasis web yang membantu pengguna untuk mendapatkan penanganan cepat dalam situasi darurat.
