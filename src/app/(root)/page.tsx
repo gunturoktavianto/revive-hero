@@ -136,7 +136,7 @@ export default function Home() {
             </p>
 
             <div className="flex gap-4 justify-center flex-wrap">
-              <Link href="/">
+              <Link href="/login">
                 <Button
                   size="lg"
                   className="bg-black hover:bg-black/90 text-white font-medium px-8 rounded-full transition-all duration-300 shadow-lg hover:shadow-xl hover:shadow-black/10 hover:scale-105"
@@ -188,7 +188,7 @@ export default function Home() {
               Keunggulan Kami
             </span>
             <h2 className="text-3xl mt-4 font-bold text-black">Fitur Utama</h2>
-            <div className="h-1 w-24 bg-gradient-to-r from-transparent via-black/80 to-transparent mx-auto mt-4 rounded-full" />
+            <div className="h-0.5 w-16 bg-gradient-to-r from-transparent via-black/40 to-transparent mx-auto mt-4 rounded-full opacity-60"></div>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -376,11 +376,11 @@ export default function Home() {
             <div className="h-px w-24 bg-gradient-to-r from-transparent via-white/20 to-transparent mx-auto my-4" />
 
             <div className="text-sm text-white/80">
-              © 2024 Revive Hero. All rights reserved.
+              © 2025 Revive Hero. All rights reserved.
             </div>
           </div>
         </div>
       </footer>
     </div>
   );
-}
+} 

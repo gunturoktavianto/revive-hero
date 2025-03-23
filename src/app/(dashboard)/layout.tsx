@@ -1,7 +1,6 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
-import { Navbar } from "@/components/Navbar";
-import "./globals.css";
+import "../globals.css";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -14,11 +13,11 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Revive Hero - Emergency Response System",
-  description: "A smart emergency response system for cardiac emergencies",
+  title: "Dashboard - Revive Hero",
+  description: "Dashboard Revive Hero",
 };
 
-export default function RootLayout({
+export default function DashboardLayout({
   children,
 }: Readonly<{
   children: React.ReactNode;
@@ -31,9 +30,9 @@ export default function RootLayout({
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased min-h-full flex flex-col bg-background text-foreground`}
       >
-        <Navbar />
+        {/* No Navbar here */}
         <main className="flex-1">{children}</main>
       </body>
     </html>
   );
-}
+} 

@@ -59,7 +59,7 @@ export function Navbar() {
               />
             </Link>
 
-            <Link href="/" className="relative group">
+            <Link href="/login" className="relative group">
               <motion.div
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
