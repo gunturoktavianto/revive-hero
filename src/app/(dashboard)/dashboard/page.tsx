@@ -196,7 +196,7 @@ export default function DashboardPage() {
                   <Button 
                     onClick={handleEditToggle}
                     variant="outline" 
-                    className="border-red-500 text-red-500 hover:bg-red-50 rounded-lg px-4 flex items-center gap-2"
+                    className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-500 rounded-lg px-4 flex items-center gap-2 "
                   >
                     <X size={16} />
                     Batal
@@ -310,7 +310,7 @@ export default function DashboardPage() {
                   <Button 
                     onClick={handleEmergencyEditToggle}
                     variant="outline" 
-                    className="border-red-500 text-red-500 hover:bg-red-50 rounded-lg px-4 flex items-center gap-2"
+                    className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-500 rounded-lg px-4 flex items-center gap-2"
                   >
                     <X size={16} />
                     Batal
@@ -334,7 +334,7 @@ export default function DashboardPage() {
                     <Button
                       onClick={() => removeEmergencyContact(index)}
                       variant="outline"
-                      className="border-red-500 text-red-500 hover:bg-red-50 rounded-lg px-4 flex items-center gap-2"
+                      className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-500 rounded-lg px-4 flex items-center gap-2"
                     >
                       <X size={16} />
                       Hapus Kontak

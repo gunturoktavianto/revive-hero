@@ -4,10 +4,9 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2, AlertCircle } from "lucide-react";
+import { CheckCircle2, AlertCircle, X } from "lucide-react";
 import { toast } from "sonner";
 
-// Add a style tag for custom animations
 const pulseAnimation = `
 @keyframes gentle-pulse {
   0% { transform: scale(1); }
@@ -193,6 +192,36 @@ export default function RegisterPage() {
         { name: "", phone: "", relation: "" }
       ]
     }));
+  };
+
+  const removeEmergencyContact = (index: number) => {
+    if (formData.emergencyContacts.length > 1) {
+      const updatedContacts = [...formData.emergencyContacts];
+      updatedContacts.splice(index, 1);
+      
+      setFormData(prev => ({
+        ...prev,
+        emergencyContacts: updatedContacts
+      }));
+
+      // Clean up errors and touched state for the removed contact
+      const updatedErrors = { ...errors };
+      if (updatedErrors.emergencyContacts?.length) {
+        updatedErrors.emergencyContacts = updatedErrors.emergencyContacts.filter((_, i) => i !== index);
+      }
+      setErrors(updatedErrors);
+
+      // Update touched state
+      const newTouched = { ...touched };
+      Object.keys(newTouched).forEach(key => {
+        if (key.startsWith(`emergencyContacts.${index}.`)) {
+          delete newTouched[key];
+        }
+      });
+      setTouched(newTouched);
+    } else {
+      toast.error("Minimal satu kontak darurat diperlukan");
+    }
   };
 
   const validateStep = (step: FormStep): boolean => {
@@ -576,7 +605,19 @@ export default function RegisterPage() {
 
               {formData.emergencyContacts.map((contact, index) => (
                 <div key={index} className="space-y-4">
-                  <h3 className="text-md font-medium">Kontak {index + 1}</h3>
+                  <div className="flex justify-between items-center">
+                    <h3 className="text-md font-medium">Kontak {index + 1}</h3>
+                    {formData.emergencyContacts.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={() => removeEmergencyContact(index)}
+                        className="border border-red-500 text-red-500 hover:bg-red-50 hover:text-red-500 rounded-lg px-4 py-1 flex items-center gap-2 text-sm"
+                      >
+                        <X size={16} />
+                        Hapus Kontak
+                      </button>
+                    )}
+                  </div>
                   <div>
                     <label className="block text-sm font-medium mb-2">
                       Nama Kontak Darurat
