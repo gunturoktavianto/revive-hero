@@ -1,31 +1,96 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, Save, X } from "lucide-react";
 import { useSession, signOut } from "next-auth/react";
 import { motion } from "framer-motion";
+import { toast } from "sonner";
+
+// Define a type for the user data structure
+type UserData = {
+  nama_lengkap: string;
+  email: string;
+  nik: string;
+  alamat: string;
+  usia: string;
+  jenis_kelamin: string;
+  emergency_contacts: Array<{
+    nama: string;
+    nomor_hp: string;
+    hubungan: string;
+  }>;
+};
 
 export default function DashboardPage() {
+  const { data: session, status } = useSession();
+  const [isLoading, setIsLoading] = useState(true);
   const [isEditing, setIsEditing] = useState(false);
   const [isEditingEmergency, setIsEditingEmergency] = useState(false);
-  // This would typically come from an API call or context
-  const [userData, setUserData] = useState({
-    nama_lengkap: "John Doe",
-    email: "john.doe@example.com",
-    nik: "3173054607040003",
-    alamat: "Jalan Semangka\nMelon Mangga No. 50",
-    usia: "35",
-    jenis_kelamin: "Laki-laki",
-    emergency_contacts: [{ nama: "Kontak Darurat", nomor_hp: "08123456789", hubungan: "Keluarga" }]
+  
+  // Initialize with empty data
+  const [userData, setUserData] = useState<UserData>({
+    nama_lengkap: "",
+    email: "",
+    nik: "",
+    alamat: "",
+    usia: "",
+    jenis_kelamin: "",
+    emergency_contacts: []
   });
 
-  const [editData, setEditData] = useState({ ...userData });
+  const [editData, setEditData] = useState<UserData>({ ...userData });
   const [editEmergencyData, setEditEmergencyData] = useState({ 
     emergency_contacts: [...userData.emergency_contacts] 
   });
+
+  // Fetch user data when session is ready
+  useEffect(() => {
+    const fetchUserData = async () => {
+      if (status === "authenticated" && session?.user?.email) {
+        try {
+          setIsLoading(true);
+          const response = await fetch(`/api/user?email=${session.user.email}`);
+          
+          if (!response.ok) {
+            throw new Error("Failed to fetch user data");
+          }
+          
+          const data = await response.json();
+          
+          // Transform data from API format to UI format
+          const transformedData: UserData = {
+            nama_lengkap: data.name || "",
+            email: data.email || "",
+            nik: data.nik || "",
+            alamat: data.address || "",
+            usia: data.age ? data.age.toString() : "",
+            jenis_kelamin: data.gender || "",
+            emergency_contacts: data.emergencyContacts ? data.emergencyContacts.map((contact: any) => ({
+              nama: contact.name || "",
+              nomor_hp: contact.phone || "",
+              hubungan: contact.relation || ""
+            })) : []
+          };
+          
+          setUserData(transformedData);
+          setEditData(transformedData);
+          setEditEmergencyData({ 
+            emergency_contacts: [...transformedData.emergency_contacts] 
+          });
+        } catch (error) {
+          console.error("Error fetching user data:", error);
+          toast.error("Gagal memuat data pengguna");
+        } finally {
+          setIsLoading(false);
+        }
+      }
+    };
+    
+    fetchUserData();
+  }, [session, status]);
 
   const handleEditToggle = () => {
     if (isEditing) {
@@ -43,17 +108,73 @@ export default function DashboardPage() {
     setIsEditingEmergency(!isEditingEmergency);
   };
 
-  const handleSave = () => {
-    setUserData({ ...editData });
-    setIsEditing(false);
+  const handleSave = async () => {
+    try {
+      // Transform data from UI format to API format
+      const apiData = {
+        name: editData.nama_lengkap,
+        nik: editData.nik,
+        address: editData.alamat,
+        age: editData.usia ? parseInt(editData.usia) : undefined,
+        gender: editData.jenis_kelamin,
+      };
+      
+      const response = await fetch('/api/user/update', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiData),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update user data");
+      }
+      
+      // Update the local state with the edited data
+      setUserData({ ...editData });
+      setIsEditing(false);
+      toast.success("Data berhasil disimpan");
+    } catch (error) {
+      console.error("Error updating user data:", error);
+      toast.error("Gagal menyimpan data");
+    }
   };
 
-  const handleEmergencySave = () => {
-    setUserData(prev => ({
-      ...prev,
-      emergency_contacts: [...editEmergencyData.emergency_contacts]
-    }));
-    setIsEditingEmergency(false);
+  const handleEmergencySave = async () => {
+    try {
+      // Transform data from UI format to API format
+      const apiData = {
+        emergencyContacts: editEmergencyData.emergency_contacts.map(contact => ({
+          name: contact.nama,
+          phone: contact.nomor_hp,
+          relation: contact.hubungan
+        }))
+      };
+      
+      const response = await fetch('/api/user/emergency-contacts', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(apiData),
+      });
+      
+      if (!response.ok) {
+        throw new Error("Failed to update emergency contacts");
+      }
+      
+      // Update the local state with the edited data
+      setUserData(prev => ({
+        ...prev,
+        emergency_contacts: [...editEmergencyData.emergency_contacts]
+      }));
+      setIsEditingEmergency(false);
+      toast.success("Kontak darurat berhasil disimpan");
+    } catch (error) {
+      console.error("Error updating emergency contacts:", error);
+      toast.error("Gagal menyimpan kontak darurat");
+    }
   };
 
   const addEmergencyContact = () => {
@@ -180,6 +301,12 @@ export default function DashboardPage() {
         </header>
 
         <main className="p-6">
+          {isLoading ? (
+            <div className="bg-white rounded-lg shadow-sm p-6 mb-6 flex flex-col items-center justify-center h-64">
+              <div className="w-10 h-10 border-4 border-black border-t-transparent rounded-full animate-spin mb-4"></div>
+              <p className="text-gray-600">Memuat data pengguna...</p>
+            </div>
+          ) : (
           <div className="bg-white rounded-lg shadow-sm p-6 mb-6">
             <div className="flex justify-between items-center mb-6">
               <h2 className="text-xl font-semibold">Informasi Pengguna</h2>
@@ -225,7 +352,7 @@ export default function DashboardPage() {
                       className="font-semibold text-lg w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
                     />
                   ) : (
-                    <p className="font-semibold text-lg">{userData.nama_lengkap}</p>
+                    <p className="font-semibold text-lg">{userData.nama_lengkap || "-"}</p>
                   )}
                 </div>
                 
@@ -239,7 +366,7 @@ export default function DashboardPage() {
                       className="font-semibold text-lg w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
                     />
                   ) : (
-                    <p className="font-semibold text-lg">{userData.nik}</p>
+                    <p className="font-semibold text-lg">{userData.nik || "-"}</p>
                   )}
                 </div>
                 
@@ -252,16 +379,22 @@ export default function DashboardPage() {
                       onChange={(e) => setEditData({...editData, jenis_kelamin: e.target.value})}
                       className="font-semibold text-lg w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
                     >
+                      <option value="">Pilih Jenis Kelamin</option>
                       <option value="Laki-laki">Laki-laki</option>
                       <option value="Perempuan">Perempuan</option>
                     </select>
                   ) : (
-                    <p className="font-semibold text-lg">{userData.jenis_kelamin}</p>
+                    <p className="font-semibold text-lg">{userData.jenis_kelamin || "-"}</p>
                   )}
                 </div>
               </div>
               
               <div>
+                <div className="mb-6">
+                  <p className="text-sm text-gray-500 mb-1">Email</p>
+                  <p className="font-semibold text-lg">{userData.email || "-"}</p>
+                </div>
+                
                 <div className="mb-6">
                   <p className="text-sm text-gray-500 mb-1">Usia</p>
                   {isEditing ? (
@@ -273,7 +406,7 @@ export default function DashboardPage() {
                       className="font-semibold text-lg w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
                     />
                   ) : (
-                    <p className="font-semibold text-lg">{userData.usia} tahun</p>
+                    <p className="font-semibold text-lg">{userData.usia ? `${userData.usia} tahun` : "-"}</p>
                   )}
                 </div>
                 
@@ -284,20 +417,23 @@ export default function DashboardPage() {
                       name="alamat"
                       value={editData.alamat}
                       onChange={handleInputChange}
-                      rows={3}
                       className="font-semibold text-lg w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
+                      rows={3}
                     />
                   ) : (
-                    <p className="font-semibold text-lg whitespace-pre-line">{userData.alamat}</p>
+                    <p className="font-semibold text-lg whitespace-pre-line">{userData.alamat || "-"}</p>
                   )}
                 </div>
               </div>
             </div>
           </div>
+          )}
           
-          <div className="bg-white rounded-lg shadow-sm p-6 mb-6 mt-6">
+          {!isLoading && (
+          <div className="bg-white rounded-lg shadow-sm p-6">
             <div className="flex justify-between items-center mb-6">
-              <h2 className="text-xl font-semibold">Data Kontak Darurat</h2>
+              <h2 className="text-xl font-semibold">Kontak Darurat</h2>
+              
               {isEditingEmergency ? (
                 <div className="flex gap-2">
                   <Button 
@@ -327,78 +463,78 @@ export default function DashboardPage() {
               )}
             </div>
             
-            {editEmergencyData.emergency_contacts.map((contact, index) => (
-              <div key={index} className="mb-6 border-b pb-6 last:border-b-0 last:pb-0">
-                {index > 0 && isEditingEmergency && (
-                  <div className="flex justify-end mb-4">
-                    <Button
-                      onClick={() => removeEmergencyContact(index)}
-                      variant="outline"
-                      className="border-red-500 text-red-500 hover:bg-red-50 hover:text-red-500 rounded-lg px-4 flex items-center gap-2"
-                    >
-                      <X size={16} />
-                      Hapus Kontak
-                    </Button>
-                  </div>
-                )}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Nama</p>
-                    {isEditingEmergency ? (
-                      <input
-                        name="nama"
-                        value={editEmergencyData.emergency_contacts[index].nama}
-                        onChange={(e) => handleContactChange(index, e)}
-                        className="font-semibold text-lg w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
-                      />
-                    ) : (
-                      <p className="font-semibold text-lg">{userData.emergency_contacts[index]?.nama || ""}</p>
+            {userData.emergency_contacts.length === 0 ? (
+              <p className="text-gray-500 italic">Tidak ada kontak darurat yang terdaftar</p>
+            ) : (
+              <>
+                {editEmergencyData.emergency_contacts.map((contact, index) => (
+                  <div key={index} className="mb-6 border-b pb-6 last:border-b-0 last:pb-0">
+                    {index > 0 && isEditingEmergency && (
+                      <button
+                        onClick={() => removeEmergencyContact(index)}
+                        className="text-red-500 hover:text-red-700 text-sm mb-2 flex items-center"
+                      >
+                        <X size={16} className="mr-1" />
+                        Hapus kontak
+                      </button>
                     )}
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Nama</p>
+                        {isEditingEmergency ? (
+                          <input
+                            name="nama"
+                            value={contact.nama}
+                            onChange={(e) => handleContactChange(index, e)}
+                            className="font-semibold w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
+                          />
+                        ) : (
+                          <p className="font-semibold">{contact.nama}</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Nomor HP</p>
+                        {isEditingEmergency ? (
+                          <input
+                            name="nomor_hp"
+                            value={contact.nomor_hp}
+                            onChange={(e) => handleContactChange(index, e)}
+                            className="font-semibold w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
+                          />
+                        ) : (
+                          <p className="font-semibold">{contact.nomor_hp}</p>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500 mb-1">Hubungan</p>
+                        {isEditingEmergency ? (
+                          <input
+                            name="hubungan"
+                            value={contact.hubungan}
+                            onChange={(e) => handleContactChange(index, e)}
+                            className="font-semibold w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
+                          />
+                        ) : (
+                          <p className="font-semibold">{contact.hubungan}</p>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Nomor HP</p>
-                    {isEditingEmergency ? (
-                      <input
-                        name="nomor_hp"
-                        value={editEmergencyData.emergency_contacts[index].nomor_hp}
-                        onChange={(e) => handleContactChange(index, e)}
-                        className="font-semibold text-lg w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
-                      />
-                    ) : (
-                      <p className="font-semibold text-lg">{userData.emergency_contacts[index]?.nomor_hp || ""}</p>
-                    )}
-                  </div>
-                  
-                  <div>
-                    <p className="text-sm text-gray-500 mb-1">Hubungan</p>
-                    {isEditingEmergency ? (
-                      <input
-                        name="hubungan"
-                        value={editEmergencyData.emergency_contacts[index].hubungan}
-                        onChange={(e) => handleContactChange(index, e)}
-                        className="font-semibold text-lg w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-black focus:border-black"
-                      />
-                    ) : (
-                      <p className="font-semibold text-lg">{userData.emergency_contacts[index]?.hubungan || ""}</p>
-                    )}
-                  </div>
-                </div>
-              </div>
-            ))}
+                ))}
+              </>
+            )}
             
             {isEditingEmergency && (
-              <div className="mt-6">
-                <Button
-                  onClick={addEmergencyContact}
-                  variant="outline"
-                  className="border-black/20 hover:bg-black/5 rounded-lg px-4 flex items-center gap-2"
-                >
-                  + Tambah Kontak Darurat
-                </Button>
-              </div>
+              <Button 
+                onClick={addEmergencyContact}
+                variant="outline" 
+                className="w-full mt-4 border-dashed border-black/20 text-black/70 hover:bg-black/5"
+              >
+                + Tambah Kontak Darurat
+              </Button>
             )}
           </div>
+          )}
         </main>
       </div>
     </div>
