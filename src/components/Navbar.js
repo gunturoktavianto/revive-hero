@@ -4,9 +4,13 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { useSession, signOut } from "next-auth/react";
+import { LogOut } from "lucide-react";
 
 export function Navbar() {
   const [scrolled, setScrolled] = useState(false);
+  const { data: session, status } = useSession();
+  const isAuthenticated = status === "authenticated";
 
   useEffect(() => {
     const handleScroll = () => {
@@ -16,6 +20,10 @@ export function Navbar() {
     window.addEventListener("scroll", handleScroll);
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
+
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
 
   return (
     <motion.nav
@@ -59,21 +67,55 @@ export function Navbar() {
               />
             </Link>
 
-            <Link href="/login" className="relative group">
-              <motion.div
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="relative z-10 px-4 py-2 text-sm font-medium text-white bg-black rounded-full transition-colors hover:bg-black/90"
-              >
-                Login
-              </motion.div>
-              <motion.div
-                className="absolute inset-0 bg-black/20 rounded-full blur-xl"
-                initial={{ opacity: 0 }}
-                whileHover={{ opacity: 1 }}
-                transition={{ duration: 0.2 }}
-              />
-            </Link>
+            {isAuthenticated ? (
+              <>
+                <Link href="/dashboard" className="group relative px-1">
+                  <span className="relative z-10 text-sm font-medium transition-colors group-hover:text-black">
+                    Dashboard
+                  </span>
+                  <motion.span
+                    layoutId="navbar-dashboard"
+                    className="absolute inset-0 z-0 bg-black/5 rounded-full"
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                </Link>
+                
+                <button 
+                  onClick={handleSignOut} 
+                  className="group relative flex items-center gap-1 px-1"
+                >
+                  <span className="relative z-10 text-sm font-medium transition-colors group-hover:text-black flex items-center gap-1">
+                    <LogOut size={14} />
+                    Logout
+                  </span>
+                  <motion.span
+                    layoutId="navbar-logout"
+                    className="absolute inset-0 z-0 bg-black/5 rounded-full"
+                    initial={{ opacity: 0 }}
+                    whileHover={{ opacity: 1 }}
+                    transition={{ duration: 0.2 }}
+                  />
+                </button>
+              </>
+            ) : (
+              <Link href="/login" className="relative group">
+                <motion.div
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="relative z-10 px-4 py-2 text-sm font-medium text-white bg-black rounded-full transition-colors hover:bg-black/90"
+                >
+                  Login
+                </motion.div>
+                <motion.div
+                  className="absolute inset-0 bg-black/20 rounded-full blur-xl"
+                  initial={{ opacity: 0 }}
+                  whileHover={{ opacity: 1 }}
+                  transition={{ duration: 0.2 }}
+                />
+              </Link>
+            )}
           </div>
         </div>
       </div>

@@ -5,6 +5,8 @@ import Image from "next/image";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { LogOut, User, Save, X } from "lucide-react";
+import { useSession, signOut } from "next-auth/react";
+import { motion } from "framer-motion";
 
 export default function DashboardPage() {
   const [isEditing, setIsEditing] = useState(false);
@@ -98,6 +100,10 @@ export default function DashboardPage() {
     }));
   };
 
+  const handleSignOut = async () => {
+    await signOut({ callbackUrl: "/" });
+  };
+
   return (
     <div className="flex min-h-screen">
       {/* Sidebar */}
@@ -121,10 +127,20 @@ export default function DashboardPage() {
         </div>
         
         <div className="p-4">
-          <Link href="/login" className="flex items-center gap-3 px-4 py-2 hover:bg-white/10 rounded-md">
+          <button 
+            onClick={handleSignOut} 
+            className="w-full flex items-center gap-3 px-4 py-2 hover:bg-white/10 rounded-md group relative"
+          >
             <LogOut size={20} />
-            <span>Keluar</span>
-          </Link>
+            <span className="relative z-10 font-medium transition-colors">Keluar</span>
+            <motion.span
+              layoutId="sidebar-logout"
+              className="absolute inset-0 z-0 bg-white/5 rounded-md pointer-events-none"
+              initial={{ opacity: 0 }}
+              whileHover={{ opacity: 1 }}
+              transition={{ duration: 0.2 }}
+            />
+          </button>
         </div>
       </div>
 

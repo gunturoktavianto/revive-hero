@@ -4,7 +4,8 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
-import { CheckCircle2 } from "lucide-react";
+import { CheckCircle2, AlertCircle } from "lucide-react";
+import { toast } from "sonner";
 
 // Add a style tag for custom animations
 const pulseAnimation = `
@@ -21,10 +22,26 @@ const pulseAnimation = `
 
 type FormStep = 'personal1' | 'personal2' | 'emergency' | 'success';
 
+type ValidationErrors = {
+  name?: string;
+  email?: string;
+  password?: string;
+  confirmPassword?: string;
+  nik?: string;
+  age?: string;
+  emergencyContacts?: Array<{
+    name?: string;
+    phone?: string;
+    relation?: string;
+  }>;
+};
+
 export default function RegisterPage() {
   const router = useRouter();
   const [currentStep, setCurrentStep] = useState<FormStep>('personal1');
   const [showIcon, setShowIcon] = useState(false);
+  const [errors, setErrors] = useState<ValidationErrors>({});
+  const [touched, setTouched] = useState<Record<string, boolean>>({});
   
   const [formData, setFormData] = useState({
     name: "",
@@ -50,11 +67,70 @@ export default function RegisterPage() {
     }
   }, [currentStep]);
 
+  const validateField = (name: string, value: string) => {
+    let error = '';
+    
+    switch (name) {
+      case 'name':
+        error = !value ? 'Nama harus diisi' : '';
+        break;
+      case 'email':
+        error = !value 
+          ? 'Email harus diisi' 
+          : !/\S+@\S+\.\S+/.test(value) 
+            ? 'Format email tidak valid' 
+            : '';
+        break;
+      case 'password':
+        error = !value 
+          ? 'Kata sandi harus diisi' 
+          : value.length < 6 
+            ? 'Kata sandi minimal 6 karakter' 
+            : '';
+        break;
+      case 'confirmPassword':
+        error = !value 
+          ? 'Konfirmasi kata sandi harus diisi' 
+          : value !== formData.password 
+            ? 'Kata sandi tidak cocok' 
+            : '';
+        break;
+      case 'nik':
+        error = !value ? 'NIK harus diisi' : '';
+        break;
+      case 'age':
+        const age = parseInt(value);
+        error = !value 
+          ? 'Usia harus diisi' 
+          : isNaN(age) || age <= 0 
+            ? 'Usia harus berupa angka yang valid' 
+            : '';
+        break;
+      default:
+        break;
+    }
+    
+    return error;
+  };
+
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
       [name]: value
+    }));
+
+    // Mark field as touched
+    setTouched(prev => ({
+      ...prev,
+      [name]: true
+    }));
+
+    // Validate field
+    const error = validateField(name, value);
+    setErrors(prev => ({
+      ...prev,
+      [name]: error
     }));
   };
 
@@ -68,6 +144,37 @@ export default function RegisterPage() {
     setFormData(prev => ({
       ...prev,
       emergencyContacts: updatedContacts
+    }));
+
+    // Mark field as touched
+    setTouched(prev => ({
+      ...prev,
+      [`emergencyContacts.${index}.${field}`]: true
+    }));
+
+    // Validate emergency contact fields
+    let errorMessage = '';
+    if (field === 'name' && !value) {
+      errorMessage = 'Nama kontak harus diisi';
+    } else if (field === 'phone' && !value) {
+      errorMessage = 'Nomor telepon harus diisi';
+    } else if (field === 'relation' && !value) {
+      errorMessage = 'Hubungan harus diisi';
+    }
+
+    // Update errors for emergency contacts
+    const contactErrors = [...(errors.emergencyContacts || [])];
+    if (!contactErrors[index]) {
+      contactErrors[index] = {};
+    }
+    contactErrors[index] = {
+      ...contactErrors[index],
+      [field]: errorMessage
+    };
+
+    setErrors(prev => ({
+      ...prev,
+      emergencyContacts: contactErrors
     }));
   };
 
@@ -88,13 +195,145 @@ export default function RegisterPage() {
     }));
   };
 
+  const validateStep = (step: FormStep): boolean => {
+    let isValid = true;
+    const newErrors: ValidationErrors = {};
+    
+    let newTouched = { ...touched };
+    
+    if (step === 'personal1') {
+      ['name', 'email', 'password', 'confirmPassword'].forEach(field => {
+        newTouched[field] = true;
+        const error = validateField(field, formData[field as keyof typeof formData] as string);
+        if (error) {
+          (newErrors as any)[field] = error;
+          isValid = false;
+        }
+      });
+    } else if (step === 'personal2') {
+      // Validate NIK and age
+      ['nik', 'age'].forEach(field => {
+        newTouched[field] = true;
+        const error = validateField(field, formData[field as keyof typeof formData] as string);
+        if (error) {
+          (newErrors as any)[field] = error;
+          isValid = false;
+        }
+      });
+    } else if (step === 'emergency') {
+      // Validate at least one emergency contact
+      if (formData.emergencyContacts.length === 0) {
+        isValid = false;
+        toast.error("Mohon tambahkan minimal satu kontak darurat");
+      } else {
+        // Validate all emergency contacts
+        const contactErrors: Array<{ name?: string; phone?: string; relation?: string }> = [];
+        
+        formData.emergencyContacts.forEach((contact, index) => {
+          contactErrors[index] = {};
+          newTouched[`emergencyContacts.${index}.name`] = true;
+          newTouched[`emergencyContacts.${index}.phone`] = true;
+          newTouched[`emergencyContacts.${index}.relation`] = true;
+          
+          if (!contact.name) {
+            contactErrors[index].name = 'Nama kontak harus diisi';
+            isValid = false;
+          }
+          
+          if (!contact.phone) {
+            contactErrors[index].phone = 'Nomor telepon harus diisi';
+            isValid = false;
+          }
+          
+          if (!contact.relation) {
+            contactErrors[index].relation = 'Hubungan harus diisi';
+            isValid = false;
+          }
+        });
+        
+        if (!isValid) {
+          newErrors.emergencyContacts = contactErrors;
+        }
+      }
+    }
+    
+    setTouched(newTouched);
+    setErrors(newErrors);
+    
+    return isValid;
+  };
+
   const goToNextStep = () => {
     if (currentStep === 'personal1') {
-      setCurrentStep('personal2');
+      if (validateStep('personal1')) {
+        setCurrentStep('personal2');
+      } else {
+        toast.error("Mohon isi semua kolom yang diperlukan dengan benar");
+      }
     } else if (currentStep === 'personal2') {
-      setCurrentStep('emergency');
+      if (validateStep('personal2')) {
+        setCurrentStep('emergency');
+      } else {
+        toast.error("Mohon isi semua kolom yang diperlukan dengan benar");
+      }
     } else if (currentStep === 'emergency') {
+      if (validateStep('emergency')) {
+        handleRegister();
+      } else {
+        toast.error("Mohon isi semua detail kontak darurat dengan benar");
+      }
+    }
+  };
+
+  const handleRegister = async () => {
+    try {
+      // Filter out empty emergency contacts
+      const validEmergencyContacts = formData.emergencyContacts.filter(
+        contact => contact.name && contact.phone && contact.relation
+      );
+      
+      // Convert age string to number for API
+      const ageValue = formData.age ? parseInt(formData.age, 10) : undefined;
+      
+      const response = await fetch('/api/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          password: formData.password,
+          nik: formData.nik,
+          address: formData.address,
+          age: formData.age,
+          gender: formData.gender,
+          emergencyContacts: validEmergencyContacts.length > 0 ? validEmergencyContacts : undefined,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        if (data.error) {
+          toast.error(typeof data.error === 'string' ? data.error : 'Registrasi gagal');
+        } else {
+          toast.error('Registrasi gagal');
+        }
+        return;
+      }
+
+      // Registration successful, show success state
+      toast.success('Registrasi berhasil! Mengalihkan ke halaman login...');
       setCurrentStep('success');
+      
+      // After showing success page for 3 seconds, redirect to login
+      setTimeout(() => {
+        router.push('/login');
+      }, 3000);
+    } catch (error) {
+      console.error('Registration error:', error);
+      toast.error('Terjadi kesalahan saat registrasi. Silakan coba lagi.');
     }
   };
 
@@ -108,6 +347,18 @@ export default function RegisterPage() {
 
   const handleLogin = () => {
     router.push('/login');
+  };
+
+  // Error display component
+  const ErrorMessage = ({ error }: { error?: string }) => {
+    if (!error) return null;
+    
+    return (
+      <div className="flex items-center gap-1 mt-1 text-red-500 text-sm">
+        <AlertCircle className="h-4 w-4" />
+        <span>{error}</span>
+      </div>
+    );
   };
 
   return (
@@ -141,8 +392,9 @@ export default function RegisterPage() {
                   value={formData.name}
                   onChange={handleInputChange}
                   required
-                  className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
+                  className={`appearance-none block w-full px-3 py-3 border ${touched.name && errors.name ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black`}
                 />
+                {touched.name && errors.name && <ErrorMessage error={errors.name} />}
               </div>
 
               <div>
@@ -156,8 +408,9 @@ export default function RegisterPage() {
                   value={formData.email}
                   onChange={handleInputChange}
                   required
-                  className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
+                  className={`appearance-none block w-full px-3 py-3 border ${touched.email && errors.email ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black`}
                 />
+                {touched.email && errors.email && <ErrorMessage error={errors.email} />}
               </div>
 
               <div>
@@ -171,8 +424,9 @@ export default function RegisterPage() {
                   value={formData.password}
                   onChange={handleInputChange}
                   required
-                  className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
+                  className={`appearance-none block w-full px-3 py-3 border ${touched.password && errors.password ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black`}
                 />
+                {touched.password && errors.password && <ErrorMessage error={errors.password} />}
               </div>
 
               <div>
@@ -186,8 +440,9 @@ export default function RegisterPage() {
                   value={formData.confirmPassword}
                   onChange={handleInputChange}
                   required
-                  className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
+                  className={`appearance-none block w-full px-3 py-3 border ${touched.confirmPassword && errors.confirmPassword ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black`}
                 />
+                {touched.confirmPassword && errors.confirmPassword && <ErrorMessage error={errors.confirmPassword} />}
               </div>
 
               <div className="flex justify-end space-x-4 mt-8">
@@ -215,23 +470,9 @@ export default function RegisterPage() {
                   value={formData.nik}
                   onChange={handleInputChange}
                   required
-                  className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
+                  className={`appearance-none block w-full px-3 py-3 border ${touched.nik && errors.nik ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black`}
                 />
-              </div>
-
-              <div>
-                <label htmlFor="address" className="block text-sm font-medium mb-2">
-                  Alamat
-                </label>
-                <input
-                  id="address"
-                  name="address"
-                  type="text"
-                  value={formData.address}
-                  onChange={handleInputChange}
-                  required
-                  className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
-                />
+                {touched.nik && errors.nik && <ErrorMessage error={errors.nik} />}
               </div>
 
               <div>
@@ -245,6 +486,21 @@ export default function RegisterPage() {
                   value={formData.age}
                   onChange={handleInputChange}
                   required
+                  className={`appearance-none block w-full px-3 py-3 border ${touched.age && errors.age ? 'border-red-500' : 'border-gray-300'} rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black`}
+                />
+                {touched.age && errors.age && <ErrorMessage error={errors.age} />}
+              </div>
+
+              <div>
+                <label htmlFor="address" className="block text-sm font-medium mb-2">
+                  Alamat
+                </label>
+                <input
+                  id="address"
+                  name="address"
+                  type="text"
+                  value={formData.address}
+                  onChange={handleInputChange}
                   className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
                 />
               </div>
@@ -322,43 +578,58 @@ export default function RegisterPage() {
                 <div key={index} className="space-y-4">
                   <h3 className="text-md font-medium">Kontak {index + 1}</h3>
                   <div>
-                    <label htmlFor={`contact-name-${index}`} className="block text-sm font-medium mb-2">
-                      Nama
+                    <label className="block text-sm font-medium mb-2">
+                      Nama Kontak Darurat
                     </label>
                     <input
-                      id={`contact-name-${index}`}
                       type="text"
                       value={contact.name}
                       onChange={(e) => handleEmergencyContactChange(index, 'name', e.target.value)}
-                      required
-                      className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
+                      className={`appearance-none block w-full px-3 py-3 border ${
+                        touched[`emergencyContacts.${index}.name`] && errors.emergencyContacts?.[index]?.name 
+                          ? 'border-red-500' 
+                          : 'border-gray-300'
+                      } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black`}
                     />
+                    {touched[`emergencyContacts.${index}.name`] && errors.emergencyContacts?.[index]?.name && (
+                      <ErrorMessage error={errors.emergencyContacts[index].name} />
+                    )}
                   </div>
                   <div>
-                    <label htmlFor={`contact-phone-${index}`} className="block text-sm font-medium mb-2">
-                      Nomor HP
+                    <label className="block text-sm font-medium mb-2">
+                      Nomor Telepon
                     </label>
                     <input
-                      id={`contact-phone-${index}`}
                       type="tel"
                       value={contact.phone}
                       onChange={(e) => handleEmergencyContactChange(index, 'phone', e.target.value)}
-                      required
-                      className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
+                      className={`appearance-none block w-full px-3 py-3 border ${
+                        touched[`emergencyContacts.${index}.phone`] && errors.emergencyContacts?.[index]?.phone 
+                          ? 'border-red-500' 
+                          : 'border-gray-300'
+                      } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black`}
                     />
+                    {touched[`emergencyContacts.${index}.phone`] && errors.emergencyContacts?.[index]?.phone && (
+                      <ErrorMessage error={errors.emergencyContacts[index].phone} />
+                    )}
                   </div>
                   <div>
-                    <label htmlFor={`contact-relation-${index}`} className="block text-sm font-medium mb-2">
+                    <label className="block text-sm font-medium mb-2">
                       Hubungan
                     </label>
                     <input
-                      id={`contact-relation-${index}`}
                       type="text"
                       value={contact.relation}
                       onChange={(e) => handleEmergencyContactChange(index, 'relation', e.target.value)}
-                      required
-                      className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
+                      className={`appearance-none block w-full px-3 py-3 border ${
+                        touched[`emergencyContacts.${index}.relation`] && errors.emergencyContacts?.[index]?.relation 
+                          ? 'border-red-500' 
+                          : 'border-gray-300'
+                      } rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black`}
                     />
+                    {touched[`emergencyContacts.${index}.relation`] && errors.emergencyContacts?.[index]?.relation && (
+                      <ErrorMessage error={errors.emergencyContacts[index].relation} />
+                    )}
                   </div>
                 </div>
               ))}

@@ -5,6 +5,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
+import { signIn } from "next-auth/react";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -12,6 +13,8 @@ export default function LoginPage() {
     email: "",
     password: ""
   });
+  const [error, setError] = useState("");
+  const [isLoading, setIsLoading] = useState(false);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
@@ -21,11 +24,29 @@ export default function LoginPage() {
     }));
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log("Login attempt with:", formData);
+    setError("");
+    setIsLoading(true);
     
-    router.push('/dashboard');
+    try {
+      const result = await signIn("credentials", {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      });
+      
+      if (result?.error) {
+        setError("Invalid email or password");
+        setIsLoading(false);
+      } else {
+        router.push('/dashboard');
+        router.refresh();
+      }
+    } catch (error) {
+      setError("An error occurred. Please try again.");
+      setIsLoading(false);
+    }
   };
 
   return (
@@ -33,12 +54,16 @@ export default function LoginPage() {
       <div className="flex flex-col w-full px-4 sm:px-6 lg:px-8 py-12">
         <div className="mx-auto w-full max-w-md">
           
-
           <div className="my-12">
             <h1 className="text-3xl font-bold mb-1">Masuk</h1>
           </div>
 
           <form className="space-y-6" onSubmit={handleSubmit}>
+            {error && (
+              <div className="bg-red-50 text-red-500 p-3 rounded-md text-sm">
+                {error}
+              </div>
+            )}
             <div>
               <label htmlFor="email" className="block text-sm font-medium mb-2">
                 Email
@@ -56,7 +81,7 @@ export default function LoginPage() {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium mb-2">
-                Kata Sandi
+                Password
               </label>
               <input
                 id="password"
@@ -67,27 +92,25 @@ export default function LoginPage() {
                 required
                 className="appearance-none block w-full px-3 py-3 border border-gray-300 rounded-lg shadow-sm placeholder-gray-400 focus:outline-none focus:ring-black focus:border-black"
               />
-              
             </div>
 
             <div>
               <Button 
                 type="submit" 
-                className="w-full bg-black hover:bg-black/90 text-white rounded-lg py-3"
+                disabled={isLoading}
+                className="w-full"
               >
-                Masuk
+                {isLoading ? "Logging in..." : "Login"}
               </Button>
             </div>
           </form>
 
-          <div className="mt-8 text-center">
-            <p className="text-sm text-gray-600">
-              Belum mempunyai akun?{" "}
-              <Link href="/register" className="font-medium text-black hover:underline">
-                Registrasi di sini
-              </Link>
-            </p>
-          </div>
+          <p className="mt-8 text-center text-sm text-gray-500">
+            Don't have an account?{" "}
+            <Link href="/register" className="font-semibold text-primary">
+              Register here
+            </Link>
+          </p>
         </div>
       </div>
     </div>

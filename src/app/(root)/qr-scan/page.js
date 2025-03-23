@@ -148,7 +148,6 @@ export default function QRScanPage() {
     oscillator.connect(gainNode);
     gainNode.connect(audioContext.destination);
 
-    // Set fixed BPM to 110 (middle of 100-120 range)
     const interval = 60 / 120;
     let time = audioContext.currentTime;
 
@@ -510,9 +509,9 @@ export default function QRScanPage() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background to-primary/5 py-12 px-4">
+    <div className="min-h-screen bg-gradient-to-b from-background to-primary/5 py-12 px-4 mt-8">
       <div className="max-w-md mx-auto relative">
-        <h1 className="text-3xl font-bold text-center bg-clip-text text-transparent bg-gradient-to-r from-primary to-primary/60">
+        <h1 className="text-3xl font-bold text-center ">
           Protokol Penanganan Darurat
         </h1>
 
